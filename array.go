@@ -6,9 +6,20 @@ import (
 	"strings"
 )
 
+func slicingPos[T any](arr []T, start int, end int) (int, int) {
+	arrLength := len(arr)
+	if start < 0 {
+		start = arrLength + start
+	}
+	if end < 0 {
+		end = arrLength + end
+	}
+	return start, end
+}
+
 // Get the element from array at given `index`
 // Allow negative index, it'll count back
-func At[T comparable](arr []T, index int) T {
+func At[T any](arr []T, index int) T {
 	if index < 0 {
 		index = len(arr) + index
 	}
@@ -16,7 +27,7 @@ func At[T comparable](arr []T, index int) T {
 }
 
 // `length` must be greater than 1
-func Chunk[T comparable](arr []T, length int) [][]T {
+func Chunk[T any](arr []T, length int) [][]T {
 	if length < 1 {
 		panic("Length must be greater than 1")
 	}
@@ -44,7 +55,7 @@ func Chunk[T comparable](arr []T, length int) [][]T {
 // Fill element to the array.
 //
 // You can specify which start and end position where element will be filled in Array.
-func Fill[T comparable](arr []T, value T, pos ...int) []T {
+func Fill[T any](arr []T, value T, pos ...int) []T {
 	newArr := []T{}
 	start := 0
 	end := len(arr)
@@ -68,20 +79,33 @@ func Fill[T comparable](arr []T, value T, pos ...int) []T {
 	return arr
 }
 
-// Check if array has given element
-func Exist[T comparable](arr []T, element T) bool {
-	for _, elem := range arr {
-		if elem == element {
-			return true
+// Check if array has given elements
+func Exist[T comparable](arr []T, elements ...T) bool {
+	if len(arr) < 1 {
+		return false
+	}
+	if len(elements) < 1 {
+		return true
+	}
+	for _, element := range elements {
+		notFound := true
+		for _, elem := range arr {
+			if elem == element {
+				notFound = false
+				break
+			}
+		}
+		if notFound {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 // Joins all element from array into one string.
 //
 // Not recommended because it'll joins all element with `fmt.Sprint`, use JoinStringer instead
-func Join[T comparable](arr []T) string {
+func Join[T any](arr []T) string {
 	builder := new(strings.Builder)
 	for _, element := range arr {
 		builder.WriteString(fmt.Sprint(element))
@@ -99,37 +123,83 @@ func JoinStringer(arr []fmt.Stringer) string {
 }
 
 // Remove the last element on array, and return it.
-func Pop[T comparable](arr []T) ([]T, T) {
+func Pop[T any](arr []T) ([]T, T) {
 	pos := len(arr) - 1
-	newArr := arr[0:pos]
+	newArr := Clone(arr[0:pos])
 	return newArr, arr[pos]
 }
 
 // Remove the first element on array, and return it.
-func Shift[T comparable](arr []T) ([]T, T) {
-	newArr := arr[1:]
+func Shift[T any](arr []T) ([]T, T) {
+	newArr := Clone(arr[1:])
 	return newArr, arr[0]
 }
 
 // Add new element on array to the first position.
-func Unshift[T comparable](arr []T, element T) []T {
+func Unshift[T any](arr []T, element T) []T {
 	return append([]T{element}, arr...)
 }
 
 // Reverse the array
-func Reverse[T comparable](arr []T) []T {
-	newArr := arr
+func Reverse[T any](arr []T) []T {
+	newArr := Clone(arr)
 	arrLength := len(arr)
 	length := arrLength / 2
 	if arrLength%2 > 0 {
 		length++
 	}
+	arrLength -= 1
 	for i := 0; i < length; i++ {
 		if i == arrLength-i {
 			continue
 		}
 		newArr[i] = arr[arrLength-i]
-		newArr[arrLength-1] = arr[i]
+		newArr[arrLength-i] = arr[i]
 	}
+	return newArr
+}
+
+// Clone array tot the new array
+func Clone[T any](arr []T) []T {
+	newArr := make([]T, len(arr))
+	copy(newArr, arr)
+	return newArr
+}
+
+// Remove element from array at specified index.
+//
+// The element that removed will returned.
+func RemoveAt[T any](arr []T, index int) ([]T, T) {
+	newArray := Clone(arr[0:index])
+	if index < len(arr) {
+		newArray = append(newArray, arr[index+1:]...)
+	}
+	return newArray, arr[index]
+}
+
+// Replace element from array with given value at specified position
+func Replace[T any](arr []T, value T, pos ...int) []T {
+	arrLength := len(arr)
+	var start, end int
+
+	posLength := len(pos)
+	if posLength > 0 {
+		start = pos[0]
+		end = start + 1
+	}
+	if posLength > 1 {
+		end = pos[1]
+	}
+	start, end = slicingPos(arr, start, end)
+
+	newArr := make([]T, arrLength)
+	for index, elem := range newArr {
+		if index >= start && index < end {
+			newArr[index] = value
+			continue
+		}
+		newArr[index] = elem
+	}
+
 	return newArr
 }
