@@ -1,6 +1,6 @@
 # Change Log
 
-## 0.0.2
+## [0.0.2] - 2022-04-27
 ### Added
 - `Clone[T any](arr []T) []T`
 - `Difference[T comparable](arr1 []T, arr2 []T) []T`
